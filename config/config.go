@@ -58,15 +58,16 @@ func NewDefault() cfg.Config {
 
 // Config represents main configuration.
 type Config struct {
-	ListenAddr string              `json:"listen"`             // The API port used for TCP & Websocket communication.
-	License    string              `json:"license"`            // The license file to use for the broker.
-	TLS        *cfg.TLSConfig      `json:"tls,omitempty"`      // The API port used for Secure TCP & Websocket communication.
-	Secrets    *cfg.VaultConfig    `json:"vault,omitempty"`    // The configuration for the Hashicorp Vault.
-	Cluster    *ClusterConfig      `json:"cluster,omitempty"`  // The configuration for the clustering.
-	Storage    *cfg.ProviderConfig `json:"storage,omitempty"`  // The configuration for the storage provider.
-	Contract   *cfg.ProviderConfig `json:"contract,omitempty"` // The configuration for the contract provider.
-	Metering   *cfg.ProviderConfig `json:"metering,omitempty"` // The configuration for the usage storage for metering.
-	Logging    *cfg.ProviderConfig `json:"logging,omitempty"`  // The configuration for the logger.
+	ListenAddr        string              `json:"listen"`              // The API port used for TCP & Websocket communication.
+	License           string              `json:"license"`             // The license file to use for the broker.
+	TLS               *cfg.TLSConfig      `json:"tls,omitempty"`       // The API port used for Secure TCP & Websocket communication.
+	Secrets           *cfg.VaultConfig    `json:"vault,omitempty"`     // The configuration for the Hashicorp Vault.
+	Cluster           *ClusterConfig      `json:"cluster,omitempty"`   // The configuration for the clustering.
+	Storage           *cfg.ProviderConfig `json:"storage,omitempty"`   // The configuration for the storage provider.
+	Contract          *cfg.ProviderConfig `json:"contract,omitempty"`  // The configuration for the contract provider.
+	Metering          *cfg.ProviderConfig `json:"metering,omitempty"`  // The configuration for the usage storage for metering.
+	Logging           *cfg.ProviderConfig `json:"logging,omitempty"`   // The configuration for the logger.
+	MqttStyleChannels bool                `json:"mqtt_style_channels"` // The configuration for the channel parser.
 }
 
 // Vault returns a vault configuration.

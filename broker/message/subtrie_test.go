@@ -25,8 +25,73 @@ func (s *testSubscriber) Send(*Message) error {
 	return nil
 }
 
+func TestTrieMatch_MultiLevelWC(t *testing.T) {
+	m := NewTrie(true)
+	testPopulateWithStrings(m, []string{
+		"#",
+		"a/#",
+		"a/b/#",
+	})
+
+	// Tests to run
+	tests := []struct {
+		topic string
+		n     int
+	}{
+		{topic: "a", n: 1},
+		{topic: "a/b", n: 2},
+		{topic: "a/b/c", n: 3},
+		{topic: "a/b/c/d", n: 3},
+		{topic: "a/b/c/d/e", n: 3},
+		{topic: "b", n: 1},
+		{topic: "b/c", n: 1},
+		{topic: "b/c/d", n: 1},
+	}
+	for _, tc := range tests {
+		result := m.Lookup(testSub(tc.topic))
+		assert.Equal(t, tc.n, len(result))
+	}
+}
+
+func TestTrieMatchMqtt(t *testing.T) {
+	m := NewTrie(true)
+	testPopulateWithStrings(m, []string{
+		"a/",
+		"a/b/c/",
+		"a/+/c/",
+		"a/b/c/d/",
+		"a/+/c/+/",
+		"x/",
+		"x/y/",
+		"x/+/z",
+	})
+
+	// Tests to run
+	tests := []struct {
+		topic string
+		n     int
+	}{
+		{topic: "a/", n: 1},
+		{topic: "a/1/", n: 0},
+		{topic: "a/2/", n: 0},
+		{topic: "a/1/2/", n: 0},
+		{topic: "a/1/2/3/", n: 0},
+		{topic: "a/x/y/c/", n: 0},
+		{topic: "a/x/c/", n: 1},
+		{topic: "a/b/c/", n: 2},
+		{topic: "a/b/c/d/", n: 2},
+		{topic: "a/b/c/e/", n: 1},
+		{topic: "x/y/c/e/", n: 0},
+	}
+
+	for _, tc := range tests {
+		result := m.Lookup(testSub(tc.topic))
+		assert.Equal(t, tc.n, len(result))
+	}
+}
+
 func TestTrieMatch(t *testing.T) {
-	m := NewTrie()
+	m := NewTrie(false)
 	testPopulateWithStrings(m, []string{
 		"a/",
 		"a/b/c/",
@@ -65,7 +130,7 @@ func TestTrieMatch(t *testing.T) {
 func TestTrieIntegration(t *testing.T) {
 	assert := assert.New(t)
 	var (
-		m  = NewTrie()
+		m  = NewTrie(false)
 		s0 = new(testSubscriber)
 		s1 = new(testSubscriber)
 		s2 = new(testSubscriber)
@@ -127,7 +192,7 @@ func testSub(topic string) []uint32 {
 
 func BenchmarkSubscriptionTrieSubscribe(b *testing.B) {
 	var (
-		m     = NewTrie()
+		m     = NewTrie(false)
 		s0    = new(testSubscriber)
 		query = []uint32{1, wildcard, 2, 3, 4}
 	)
@@ -142,7 +207,7 @@ func BenchmarkSubscriptionTrieSubscribe(b *testing.B) {
 
 func BenchmarkSubscriptionTrieUnsubscribe(b *testing.B) {
 	var (
-		m     = NewTrie()
+		m     = NewTrie(false)
 		s0    = new(testSubscriber)
 		query = []uint32{1, wildcard, 2, 3, 4}
 	)
@@ -159,7 +224,7 @@ func BenchmarkSubscriptionTrieUnsubscribe(b *testing.B) {
 
 func BenchmarkSubscriptionTrieLookup(b *testing.B) {
 	var (
-		m  = NewTrie()
+		m  = NewTrie(false)
 		s0 = new(testSubscriber)
 		q1 = []uint32{1, wildcard, 2, 3, 4}
 		q2 = []uint32{1, 5, 2, 3, 4}
@@ -177,7 +242,7 @@ func BenchmarkSubscriptionTrieLookup(b *testing.B) {
 
 func BenchmarkSubscriptionTrieSubscribeCold(b *testing.B) {
 	var (
-		m     = NewTrie()
+		m     = NewTrie(false)
 		s0    = new(testSubscriber)
 		query = []uint32{1, wildcard, 2, 3, 4}
 	)
@@ -190,7 +255,7 @@ func BenchmarkSubscriptionTrieSubscribeCold(b *testing.B) {
 
 func BenchmarkSubscriptionTrieUnsubscribeCold(b *testing.B) {
 	var (
-		m     = NewTrie()
+		m     = NewTrie(false)
 		s0    = new(testSubscriber)
 		query = []uint32{1, wildcard, 2, 3, 4}
 	)
@@ -205,7 +270,7 @@ func BenchmarkSubscriptionTrieUnsubscribeCold(b *testing.B) {
 
 func BenchmarkSubscriptionTrieLookupCold(b *testing.B) {
 	var (
-		m  = NewTrie()
+		m  = NewTrie(false)
 		s0 = new(testSubscriber)
 		q1 = []uint32{1, wildcard, 2, 3, 4}
 		q2 = []uint32{1, 5, 2, 3, 4}

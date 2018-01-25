@@ -67,7 +67,7 @@ func NewService(cfg *config.Config) (s *Service, err error) {
 	s = &Service{
 		Closing:       make(chan bool),
 		Config:        cfg,
-		subscriptions: message.NewTrie(),
+		subscriptions: message.NewTrie(cfg.MqttStyleChannels),
 		http:          new(http.Server),
 		tcp:           new(tcp.Server),
 		presence:      make(chan *presenceNotify, 100),

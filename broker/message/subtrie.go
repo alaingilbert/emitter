@@ -123,8 +123,8 @@ func (c *cNode) removed(word uint32, sub Subscriber) *cNode {
 
 // getBranches returns the branches for the given word. There are two possible
 // branches: exact match and single wildcard.
-func (c *cNode) getBranches(word uint32) (*branch, *branch) {
-	return c.branches[word], c.branches[wildcard]
+func (c *cNode) getBranches(word uint32) (*branch, *branch, *branch) {
+	return c.branches[word], c.branches[wildcard], c.branches[multiwc]
 }
 
 type branch struct {
@@ -163,12 +163,13 @@ type tNode struct{}
 // Trie represents an efficient collection of subscriptions with lookup capability.
 type Trie struct {
 	root *iNode
+	mqtt bool // Either or not to use mqtt style channels to retrieve subscribers.
 }
 
 // NewTrie creates a new matcher for the subscriptions.
-func NewTrie() *Trie {
+func NewTrie(mqtt bool) *Trie {
 	root := &iNode{main: &mainNode{cNode: &cNode{}}}
-	return &Trie{root: root}
+	return &Trie{root: root, mqtt: mqtt}
 }
 
 // Subscribe adds the Subscriber to the topic and returns a Subscription.
@@ -335,7 +336,7 @@ func (c *Trie) ilookup(i, parent *iNode, words []uint32, subs *Subscribers) bool
 	switch {
 	case main.cNode != nil:
 		// Traverse exact-match branch and single-word-wildcard branch.
-		exact, singleWC := main.cNode.getBranches(words[0])
+		exact, singleWC, multiWC := main.cNode.getBranches(words[0])
 		if exact != nil {
 			if !c.bLookup(i, parent, main, exact, words, subs) {
 				return false
@@ -345,6 +346,14 @@ func (c *Trie) ilookup(i, parent *iNode, words []uint32, subs *Subscribers) bool
 		if singleWC != nil {
 			if !c.bLookup(i, parent, main, singleWC, words, subs) {
 				return false
+			}
+		}
+
+		if c.mqtt && multiWC != nil {
+			if len(multiWC.subs) > 0 {
+				for _, s := range multiWC.subscribers() {
+					subs.AddUnique(s)
+				}
 			}
 		}
 
@@ -362,7 +371,7 @@ func (c *Trie) ilookup(i, parent *iNode, words []uint32, subs *Subscribers) bool
 // the operation needs to be retried.
 func (c *Trie) bLookup(i, parent *iNode, main *mainNode, b *branch, words []uint32, subs *Subscribers) bool {
 	// Retrieve the subscribers from the branch we are currently traversing.
-	if len(b.subs) > 0 {
+	if !c.mqtt && len(b.subs) > 0 {
 		for _, s := range b.subscribers() {
 			subs.AddUnique(s)
 		}
@@ -378,6 +387,13 @@ func (c *Trie) bLookup(i, parent *iNode, main *mainNode, b *branch, words []uint
 
 		// If the branch has an I-node, ilookup is called recursively.
 		return c.ilookup(b.iNode, i, words[1:], subs)
+	} else if c.mqtt {
+		// Retrieve the subscribers from the branch we are currently traversing.
+		if len(b.subs) > 0 {
+			for _, s := range b.subscribers() {
+				subs.AddUnique(s)
+			}
+		}
 	}
 	return true
 }
