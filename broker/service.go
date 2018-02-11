@@ -282,11 +282,71 @@ func (s *Service) onHealth(w http.ResponseWriter, r *http.Request) {
 
 // Occurs when a new HTTP request is received.
 func (s *Service) onHTTPKeyGen(w http.ResponseWriter, r *http.Request) {
-	if resp, err := http.Get("http://s3-eu-west-1.amazonaws.com/cdn.emitter.io/web/keygen.html"); err == nil {
-		if content, err := ioutil.ReadAll(resp.Body); err == nil {
-			w.Write(content)
+	if r.Method == "GET" {
+		if resp, err := http.Get("http://s3-eu-west-1.amazonaws.com/cdn.emitter.io/web/keygen.html"); err == nil {
+			if content, err := ioutil.ReadAll(resp.Body); err == nil {
+				w.Write(content)
+				return
+			}
+		}
+
+	} else if r.Method == "POST" {
+
+		// Deserialize the body.
+		message := keyGenRequest{}
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&message)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		defer r.Body.Close()
+
+		// Attempt to parse the key, this should be a master key
+		masterKey, err := s.Cipher.DecryptKey([]byte(message.Key))
+		if err != nil || !masterKey.IsMaster() || masterKey.IsExpired() {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		// Attempt to fetch the contract using the key. Underneath, it's cached.
+		contract, contractFound := s.contracts.Get(masterKey.Contract())
+		if !contractFound {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		// Validate the contract
+		if !contract.Validate(masterKey) {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		// Use the cipher to generate the key
+		key, err := s.Cipher.GenerateKey(masterKey, message.Channel, message.access(), message.expires(), -1)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(ErrServerError.Message))
+			return
+		}
+
+		// Success, return the response
+		resp, err := json.Marshal(&keyGenResponse{
+			Status:  200,
+			Key:     key,
+			Channel: message.Channel,
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(resp)
+		return
+
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 }
 
