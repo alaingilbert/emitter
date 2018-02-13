@@ -58,7 +58,7 @@ func (s *Service) getStatus() (*StatusInfo, error) {
 func (s *Service) reportStatus() {
 	if status, err := s.getStatus(); err == nil {
 		if b, err := json.Marshal(status); err == nil {
-			s.selfPublish("cluster/"+status.Addr+"/", b)
+			s.selfPublish("cluster/"+status.Addr, b)
 		}
 	}
 }

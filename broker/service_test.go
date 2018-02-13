@@ -19,10 +19,13 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-const testLicense = "zT83oDV0DWY5_JysbSTPTDr8KB0AAAAAAAAAAAAAAAI"
+const testLicense = "2KMgg6viHMWFjRCFCKahbvOR63GkAfyUAAAAAAAAAAI"
+const secretKey = "KDmzvpQkQ4mJRenZFDK0ukhce4vJDr1k"
 
 func Test_onHTTPPresence(t *testing.T) {
 	license, _ := security.ParseLicense(testLicense)
+
+	keyP := "u6vhSi0clRV8UbzuK9vc7xDzFn04oCXt"
 
 	tests := []struct {
 		payload       string
@@ -35,7 +38,7 @@ func Test_onHTTPPresence(t *testing.T) {
 		msg           string
 	}{
 		{
-			payload:       `{"key":"VfW_Cv5wWVZPHgCvLwJAuU2bgRFKXQEY","channel":"a","status":true}`,
+			payload:       `{"key":"` + keyP + `","channel":"a","status":true}`,
 			contractValid: true,
 			contractFound: true,
 			success:       true,
@@ -45,7 +48,7 @@ func Test_onHTTPPresence(t *testing.T) {
 			msg:           "Successful case",
 		},
 		{
-			payload:       `{"key":"VfW_Cv5wWVZPHgCvLwJAuU2bgRFKXQEY","channel":"a","status":true}`,
+			payload:       `{"key":"` + keyP + `","channel":"a","status":true}`,
 			contractValid: true,
 			contractFound: true,
 			success:       true,
@@ -64,7 +67,7 @@ func Test_onHTTPPresence(t *testing.T) {
 			msg:           "Invalid payload case",
 		},
 		{
-			payload:       `{"key":"VfW_Cv5wWVZPHgCvLwJAuU2bgRFKXQEY","channel":"a+b","status":true}`,
+			payload:       `{"key":"` + keyP + `","channel":"a+b","status":true}`,
 			contractValid: true,
 			contractFound: true,
 			success:       false,
@@ -167,7 +170,7 @@ func TestPubsub(t *testing.T) {
 		sub := mqtt.Subscribe{
 			Header: &mqtt.StaticHeader{QOS: 0},
 			Subscriptions: []mqtt.TopicQOSTuple{
-				{Topic: []byte("0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c/"), Qos: 0},
+				{Topic: []byte("0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c"), Qos: 0},
 			},
 		}
 		_, err := sub.EncodeTo(cli)
@@ -183,7 +186,7 @@ func TestPubsub(t *testing.T) {
 	{ // Publish a message
 		msg := mqtt.Publish{
 			Header:  &mqtt.StaticHeader{QOS: 0},
-			Topic:   []byte("0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c/"),
+			Topic:   []byte("0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c"),
 			Payload: []byte("hello world"),
 		}
 		_, err := msg.EncodeTo(cli)

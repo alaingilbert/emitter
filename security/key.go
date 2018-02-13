@@ -114,13 +114,11 @@ func (k Key) ValidateChannel(ch *Channel) bool {
 	target := uint32(k[16])<<24 | uint32(k[17])<<16 | uint32(k[18])<<8 | uint32(k[19])
 	targetPath := uint32(k[12])<<16 | uint32(k[13])<<8 | uint32(k[14])
 
-	// Retro-compatibility: if there's no depth specified we default to a single-level validation
-	if targetPath == 0 {
-		return target == ch.Target()
+	if target == 1325880984 { // Key target was "#" (1325880984 == hash(""))
+		return true
 	}
 
 	channel := string(ch.Channel)
-	channel = strings.TrimRight(channel, "/")
 	parts := strings.Split(channel, "/")
 	wc := parts[len(parts)-1] == "#"
 	if wc {
@@ -128,13 +126,18 @@ func (k Key) ValidateChannel(ch *Channel) bool {
 	}
 
 	maxDepth := 0
-
-	for i := 0; i < 23; i++ {
-		if ((targetPath >> (22 - uint32(i))) & 1) == 1 {
-			maxDepth = i
+	for i := uint32(0); i < 23; i++ {
+		if ((targetPath >> i) & 1) == 1 {
+			maxDepth = 23 - int(i)
+			break
 		}
 	}
-	maxDepth++
+
+	// If no depth defined, all the parts in key target were wildcards (+)
+	// We need to compare the key hash with the whole channel we received.
+	if maxDepth == 0 {
+		maxDepth = len(parts)
+	}
 
 	// Get the first bit, whether the key is the exact match or not
 	keyIsExactTarget := ((targetPath >> 23) & 1) == 1
@@ -143,12 +146,11 @@ func (k Key) ValidateChannel(ch *Channel) bool {
 	}
 
 	for idx, part := range parts {
-		if part == "+" {
-			if ((targetPath >> (22 - uint32(idx))) & 1) == 1 {
+		if ((targetPath >> (22 - uint32(idx))) & 1) == 1 {
+			if part == "+" {
 				return false
 			}
-		}
-		if ((targetPath >> (22 - uint32(idx))) & 1) == 0 {
+		} else {
 			parts[idx] = "+"
 		}
 	}
@@ -162,13 +164,9 @@ func (k Key) ValidateChannel(ch *Channel) bool {
 
 // SetTarget sets the target channel for the key.
 func (k Key) SetTarget(channel string) error {
-	if !strings.HasSuffix(channel, "/") {
-		return ErrTargetInvalid
-	}
-
 	// Get all of the parts for the target channel
 	// History: https://github.com/emitter-io/emitter/issues/76
-	parts := strings.Split(strings.TrimRight(channel, "/"), "/")
+	parts := strings.Split(channel, "/")
 	wildcard := parts[len(parts)-1] == "#"
 
 	// 1st bit is 0 for wildcard, 1 for strict type

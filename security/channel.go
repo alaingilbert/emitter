@@ -124,6 +124,7 @@ func (c *Channel) parseKey(text []byte) (i int, ok bool) {
 // ParseKey reads the provided API key, this should be the 32-character long
 // key or 'emitter' string for custom API requests.
 func (c *Channel) parseChannel(text []byte) (i int) {
+	c.ChannelType = ChannelStatic
 	length, offset := len(text), 0
 	chanChars := 0
 	wildcards := 0
@@ -133,32 +134,16 @@ func (c *Channel) parseChannel(text []byte) (i int) {
 
 		// If we're reading a separator compute the SSID.
 		case symbol == config.ChannelSeparator:
-			if chanChars == 0 && wildcards == 0 {
-				c.ChannelType = ChannelInvalid
-				return i
-			}
 			c.Query = append(c.Query, utils.GetHash(text[offset:i]))
-
-			if i+1 == length { // The end flag
-				c.Channel = text[:i+1]
-				if c.ChannelType != ChannelWildcard {
-					c.ChannelType = ChannelStatic
-				}
-				return i + 1
-			} else if text[i+1] == '?' {
-				c.Channel = text[:i+1]
-				if c.ChannelType != ChannelWildcard {
-					c.ChannelType = ChannelStatic
-				}
-				return i + 2
-			}
-
 			offset = i + 1
 			chanChars = 0
 			wildcards = 0
 			continue
+		case symbol == '?':
+			c.Channel = text[:i]
+			return i + 1
 		// If this symbol is a wildcard symbol
-		case symbol == '+' || symbol == '*':
+		case symbol == '+':
 			if chanChars > 0 || wildcards > 0 {
 				c.ChannelType = ChannelInvalid
 				return i
@@ -166,9 +151,23 @@ func (c *Channel) parseChannel(text []byte) (i int) {
 			wildcards++
 			c.ChannelType = ChannelWildcard
 			continue
-
+		case symbol == '#':
+			if chanChars > 0 || wildcards > 0 {
+				c.ChannelType = ChannelInvalid
+				return i
+			}
+			c.ChannelType = ChannelWildcard
+			c.Query = append(c.Query, utils.GetHash(text[offset:i+1]))
+			c.Channel = text[:i+1]
+			if i+1 == length {
+				return i + 1
+			} else if text[i+1] == '?' {
+				return i + 2
+			}
+			c.ChannelType = ChannelInvalid
+			return i + 1
 		// Valid character, but nothing special
-		case (symbol >= 45 && symbol <= 58) || (symbol >= 65 && symbol <= 122):
+		case (symbol >= 45 && symbol <= 58) || (symbol >= 65 && symbol <= 122) || symbol == '$':
 			if wildcards > 0 {
 				c.ChannelType = ChannelInvalid
 				return i
@@ -182,7 +181,8 @@ func (c *Channel) parseChannel(text []byte) (i int) {
 			return i
 		}
 	}
-	c.ChannelType = ChannelInvalid
+	c.Query = append(c.Query, utils.GetHash(text[offset:i]))
+	c.Channel = text[:i]
 	return i
 }
 

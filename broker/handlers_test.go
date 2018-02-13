@@ -42,7 +42,7 @@ func TestHandlers_onSubscribeUnsubscribe(t *testing.T) {
 		msg           string
 	}{
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c/",
+			channel:       "Ee2dkoro6hZLY5Ixp9XOCl2Nv1KTJZkZ/a/b/c",
 			subCount:      1,
 			subErr:        (*EventError)(nil),
 			unsubCount:    0,
@@ -52,7 +52,7 @@ func TestHandlers_onSubscribeUnsubscribe(t *testing.T) {
 			msg:           "Successful case",
 		},
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a+q/b/c/",
+			channel:       "Ee2dkoro6hZLY5Ixp9XOCl2Nv1KTJZkZ/a+q/b/c",
 			subCount:      0,
 			subErr:        ErrBadRequest,
 			unsubCount:    0,
@@ -62,7 +62,7 @@ func TestHandlers_onSubscribeUnsubscribe(t *testing.T) {
 			msg:           "Invalid channel case",
 		}, /*
 			{
-				channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/+/b/c/",
+				channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/+/b/c",
 				count:         0,
 				err:           ErrForbidden,
 				contractValid: true,
@@ -71,7 +71,7 @@ func TestHandlers_onSubscribeUnsubscribe(t *testing.T) {
 			},*/
 
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBZRqJDby30mT/a/b/c/",
+			channel:       "0Nq8SWbL8qoOKEDqh_ebBZRqJDby30mT/a/b/c",
 			subCount:      0,
 			subErr:        ErrUnauthorized,
 			unsubCount:    0,
@@ -81,7 +81,7 @@ func TestHandlers_onSubscribeUnsubscribe(t *testing.T) {
 			msg:           "Expired key case",
 		},
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c/",
+			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c",
 			subCount:      0,
 			subErr:        ErrNotFound,
 			unsubCount:    0,
@@ -91,7 +91,7 @@ func TestHandlers_onSubscribeUnsubscribe(t *testing.T) {
 			msg:           "Contract not found case",
 		},
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c/",
+			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c",
 			subCount:      0,
 			subErr:        ErrUnauthorized,
 			unsubCount:    0,
@@ -101,7 +101,7 @@ func TestHandlers_onSubscribeUnsubscribe(t *testing.T) {
 			msg:           "Contract is invalid case",
 		}, /*
 			{
-				channel:       "0Nq8SWbL8qoJzie4_C4yvupug6cLLlWO/a/b/c/",
+				channel:       "0Nq8SWbL8qoJzie4_C4yvupug6cLLlWO/a/b/c",
 				count:         0,
 				err:           ErrUnauthorized,
 				contractValid: true,
@@ -109,7 +109,7 @@ func TestHandlers_onSubscribeUnsubscribe(t *testing.T) {
 				msg:           "No write permission case",
 			},*/
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBZHmCtcvoHGQ/a/b/c/",
+			channel:       "0Nq8SWbL8qoOKEDqh_ebBZHmCtcvoHGQ/a/b/c",
 			subCount:      0,
 			subErr:        ErrUnauthorized,
 			unsubCount:    0,
@@ -173,7 +173,7 @@ func TestHandlers_onPublish(t *testing.T) {
 		msg           string
 	}{
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c/",
+			channel:       "Ee2dkoro6hZLY5Ixp9XOCl2Nv1KTJZkZ/a/b/c",
 			payload:       "test",
 			err:           (*EventError)(nil),
 			contractValid: true,
@@ -181,7 +181,7 @@ func TestHandlers_onPublish(t *testing.T) {
 			msg:           "Successful case",
 		},
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a+q/b/c/",
+			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a+q/b/c",
 			payload:       "test",
 			err:           ErrBadRequest,
 			contractValid: true,
@@ -189,7 +189,7 @@ func TestHandlers_onPublish(t *testing.T) {
 			msg:           "Invalid channel case",
 		},
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/+/b/c/",
+			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/+/b/c",
 			payload:       "test",
 			err:           ErrForbidden,
 			contractValid: true,
@@ -197,7 +197,7 @@ func TestHandlers_onPublish(t *testing.T) {
 			msg:           "Channel is not static case",
 		},
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBZRqJDby30mT/a/b/c/",
+			channel:       "0Nq8SWbL8qoOKEDqh_ebBZRqJDby30mT/a/b/c",
 			payload:       "test",
 			err:           ErrUnauthorized,
 			contractValid: true,
@@ -205,7 +205,7 @@ func TestHandlers_onPublish(t *testing.T) {
 			msg:           "Expired key case",
 		},
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c/",
+			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c",
 			payload:       "test",
 			err:           ErrNotFound,
 			contractValid: true,
@@ -213,7 +213,7 @@ func TestHandlers_onPublish(t *testing.T) {
 			msg:           "Contract not found case",
 		},
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c/",
+			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c",
 			payload:       "test",
 			err:           ErrUnauthorized,
 			contractValid: false,
@@ -221,7 +221,7 @@ func TestHandlers_onPublish(t *testing.T) {
 			msg:           "Contract is invalid case",
 		},
 		{
-			channel:       "0Nq8SWbL8qoJzie4_C4yvupug6cLLlWO/a/b/c/",
+			channel:       "0Nq8SWbL8qoJzie4_C4yvupug6cLLlWO/a/b/c",
 			payload:       "test",
 			err:           ErrUnauthorized,
 			contractValid: true,
@@ -229,7 +229,7 @@ func TestHandlers_onPublish(t *testing.T) {
 			msg:           "No write permission case",
 		},
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBZHmCtcvoHGQ/a/b/c/",
+			channel:       "0Nq8SWbL8qoOKEDqh_ebBZHmCtcvoHGQ/a/b/c",
 			payload:       "test",
 			err:           ErrUnauthorized,
 			contractValid: true,
@@ -237,7 +237,7 @@ func TestHandlers_onPublish(t *testing.T) {
 			msg:           "Wrong target case",
 		},
 		{
-			channel:       "0Nq8SWbL8qoOKEDqh_ebBepug6cLLlWO/a/b/c/",
+			channel:       "Ee2dkoro6hZLY5Ixp9XOCl2Nv1KTJZkZ/a/b/c",
 			payload:       "test",
 			err:           (*EventError)(nil),
 			contractValid: true,
@@ -415,8 +415,8 @@ func TestHandlers_onKeygen(t *testing.T) {
 			payload:       "{\"key\":\"8GR6MtpL7Xut-pyogQMeS_gyxEA21BbR\",\"channel\":\"article1\"}",
 			contractValid: true,
 			contractFound: true,
-			generated:     false,
-			resp:          ErrTargetInvalid,
+			generated:     true,
+			resp:          keyGenResponse{Status: 200, Key: "76w5HdpyIOQh70HnB4d33gbqD5fFztGY", Channel: "article1"},
 			msg:           "Target invalid case",
 		},
 		{

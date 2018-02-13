@@ -19,45 +19,72 @@ func validateChannel(k Key, c string) bool {
 func TestKey_New(t *testing.T) {
 	key := Key(make([]byte, 24))
 
-	// Test retro-compatibility
-	// A key with bytes 12-13-14 set to 0 will only compare the first part of the channel.
-	key.SetTarget("a/")
-	key[12] = 0
-	key[13] = 0
-	key[14] = 0
-	assert.True(t, key.ValidateChannel(ParseChannel([]byte(string(key)+"/a/"))))
-	assert.True(t, key.ValidateChannel(ParseChannel([]byte(string(key)+"/a/b/"))))
-	assert.True(t, key.ValidateChannel(ParseChannel([]byte(string(key)+"/a/b/c/"))))
-	assert.True(t, key.ValidateChannel(ParseChannel([]byte(string(key)+"/a/+/c/"))))
-	assert.False(t, key.ValidateChannel(ParseChannel([]byte(string(key)+"/b/"))))
-
 	// Test exact channel
-	key.SetTarget("a/b/c/")
-	assert.False(t, validateChannel(key, "a/b/"))
-	assert.True(t, validateChannel(key, "a/b/c/"))
-	assert.False(t, validateChannel(key, "a/b/c/d/"))
+	key.SetTarget("a/b/c")
+	assert.False(t, validateChannel(key, "a/b"))
+	assert.True(t, validateChannel(key, "a/b/c"))
+	assert.False(t, validateChannel(key, "a/b/c/d"))
 
 	// Test exact channel with wildcard
-	key.SetTarget("a/+/c/")
-	assert.True(t, validateChannel(key, "a/b/c/"))
-	assert.True(t, validateChannel(key, "a/c/c/"))
-	assert.True(t, validateChannel(key, "a/d/c/"))
-	assert.True(t, validateChannel(key, "a/+/c/"))
-	assert.False(t, validateChannel(key, "a/b/+/"))
+	key.SetTarget("a/+/c")
+	assert.True(t, validateChannel(key, "a/b/c"))
+	assert.True(t, validateChannel(key, "a/c/c"))
+	assert.True(t, validateChannel(key, "a/d/c"))
+	assert.True(t, validateChannel(key, "a/+/c"))
+	assert.False(t, validateChannel(key, "a/b/+"))
+
+	key.SetTarget("+")
+	assert.True(t, validateChannel(key, ""))
+	assert.True(t, validateChannel(key, "a"))
+	assert.False(t, validateChannel(key, "a/b"))
+	assert.False(t, validateChannel(key, "a/b/c"))
+
+	key.SetTarget("+/+")
+	assert.False(t, validateChannel(key, ""))
+	assert.False(t, validateChannel(key, "a"))
+	assert.True(t, validateChannel(key, "a/b"))
+	assert.False(t, validateChannel(key, "a/b/c"))
+	assert.True(t, validateChannel(key, "a/+"))
+	assert.True(t, validateChannel(key, "+/b"))
+	assert.True(t, validateChannel(key, "+/+"))
+
+	key.SetTarget("+/+/+")
+	assert.False(t, validateChannel(key, ""))
+	assert.False(t, validateChannel(key, "a"))
+	assert.False(t, validateChannel(key, "a/b"))
+	assert.True(t, validateChannel(key, "a/b/c"))
 
 	// Test open channel
-	key.SetTarget("a/b/c/#/")
-	assert.False(t, validateChannel(key, "a/b/"))
-	assert.True(t, validateChannel(key, "a/b/c/"))
-	assert.True(t, validateChannel(key, "a/b/c/d/"))
-	assert.True(t, validateChannel(key, "a/b/c/d/e/"))
-	assert.True(t, validateChannel(key, "a/b/c/d/+/f/"))
-	assert.True(t, validateChannel(key, "a/b/c/d/+/f/#/"))
+	key.SetTarget("#")
+	assert.True(t, validateChannel(key, "#"))
+	assert.True(t, validateChannel(key, "a"))
+	assert.True(t, validateChannel(key, "a/b"))
+	assert.True(t, validateChannel(key, "$SYS"))
+	assert.True(t, validateChannel(key, "$SYS/cluster"))
+	assert.True(t, validateChannel(key, "$SYS/cluster/ip1"))
+
+	key.SetTarget("$SYS/#")
+	assert.True(t, validateChannel(key, "$SYS"))
+	assert.True(t, validateChannel(key, "$SYS/cluster"))
+	assert.True(t, validateChannel(key, "$SYS/cluster/ip1"))
+
+	key.SetTarget("$SYS/cluster")
+	assert.False(t, validateChannel(key, "$SYS"))
+	assert.True(t, validateChannel(key, "$SYS/cluster"))
+	assert.False(t, validateChannel(key, "$SYS/cluster/ip1"))
+
+	key.SetTarget("a/b/c/#")
+	assert.False(t, validateChannel(key, "a/b"))
+	assert.True(t, validateChannel(key, "a/b/c"))
+	assert.True(t, validateChannel(key, "a/b/c/d"))
+	assert.True(t, validateChannel(key, "a/b/c/d/e"))
+	assert.True(t, validateChannel(key, "a/b/c/d/+/f"))
+	assert.True(t, validateChannel(key, "a/b/c/d/+/f/#"))
 
 	// Test ErrTargetTooLong
-	assert.Nil(t, key.SetTarget("1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23/"))
-	assert.Nil(t, key.SetTarget("1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23/#/"))
-	assert.Equal(t, ErrTargetTooLong, key.SetTarget("1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23/24/"))
+	assert.Nil(t, key.SetTarget("1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23"))
+	assert.Nil(t, key.SetTarget("1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23/#"))
+	assert.Equal(t, ErrTargetTooLong, key.SetTarget("1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23/24"))
 }
 
 func TestKey(t *testing.T) {
@@ -68,7 +95,7 @@ func TestKey(t *testing.T) {
 	key.SetContract(123)
 	key.SetSignature(777)
 	key.SetPermissions(AllowReadWrite)
-	key.SetTarget("a/b/c/")
+	key.SetTarget("a/b/c")
 	key.SetExpires(time.Unix(1497683272, 0).UTC())
 
 	assert.Equal(t, uint16(999), key.Salt())

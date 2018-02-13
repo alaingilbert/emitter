@@ -2,9 +2,10 @@ package security
 
 import (
 	"encoding/base64"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type x struct {
@@ -168,21 +169,8 @@ func TestGenerateKey(t *testing.T) {
 	license, _ := ParseLicense("pLcaYvemMQOZR9o9sa5COWztxfAAAAAAAAAAAAAAAAI")
 	cipher, _ := license.Cipher()
 	masterKey, _ := cipher.DecryptKey([]byte("xEbaDPaICEwVhgdnl2rg_1DWi_MAg_3B"))
+	key, err := cipher.GenerateKey(masterKey, "article1", AllowRead, time.Unix(0, 0), 1)
 
-	tests := []struct {
-		channel  string
-		expected string
-		err      bool
-	}{
-		{channel: "article1", err: true},
-		{channel: "article1/", expected: "jhdrak0aHbbK6TbmyA391n2FucwUj7Q2"},
-	}
-
-	for _, tc := range tests {
-		key, err := cipher.GenerateKey(masterKey, tc.channel, AllowRead, time.Unix(0, 0), 1)
-		assert.Equal(t, tc.err, err != nil)
-		if !tc.err {
-			assert.Equal(t, tc.expected, key)
-		}
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, "jhdrak0aHbbK6TbmyA391ndW3JwwgtNw", key)
 }

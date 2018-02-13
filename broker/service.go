@@ -25,7 +25,6 @@ import (
 	"net/http/pprof"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -325,11 +324,6 @@ func (s *Service) onHTTPPresence(w http.ResponseWriter, r *http.Request) {
 	if !contract.Validate(key) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
-	}
-
-	// Ensure we have trailing slash
-	if !strings.HasSuffix(msg.Channel, "/") {
-		msg.Channel = msg.Channel + "/"
 	}
 
 	// Parse the channel

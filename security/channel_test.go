@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/emitter-io/emitter/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,48 +28,58 @@ func BenchmarkParseChannelStatic(b *testing.B) {
 	}
 }
 
+func buildQuery(strs ...string) []uint32 {
+	qs := make([]uint32, 0)
+	for _, str := range strs {
+		qs = append(qs, utils.GetHash([]byte(str)))
+	}
+	return qs
+}
+
 func TestParseChannel(t *testing.T) {
 	tests := []struct {
 		k  string
 		ch string
 		o  []string
 		t  uint8
+		q  []uint32
 	}{
-		{k: "emitter", ch: "a/", t: ChannelStatic},
-		{k: "emitter", ch: "a/b/c/", t: ChannelStatic},
-		{k: "emitter", ch: "test-channel/", t: ChannelStatic},
-		{k: "emitter", ch: "test-channel/+/and-more/", t: ChannelWildcard},
-		{k: "emitter", ch: "a/-/x/", t: ChannelStatic},
-		{k: "emitter", ch: "a/b/c/d/", t: ChannelStatic},
-		{k: "emitter", ch: "a/b/c/+/", t: ChannelWildcard},
-		{k: "emitter", ch: "a/+/c/+/", t: ChannelWildcard},
-		{k: "emitter", ch: "b/+/", t: ChannelWildcard},
-		{k: "0TJnt4yZPL73zt35h1UTIFsYBLetyD_g", ch: "emitter/", o: []string{"test=true", "something=7"}, t: ChannelStatic},
-		{k: "emitter", ch: "a/b/c/d/", o: []string{"test=true", "something=7"}, t: ChannelStatic},
+		{k: "emitter", ch: "", t: ChannelStatic, q: buildQuery("")},
+		{k: "emitter", ch: "+", t: ChannelWildcard, q: buildQuery("+")},
+		{k: "emitter", ch: "#", t: ChannelWildcard, q: buildQuery("#")},
+		{k: "emitter", ch: "/", t: ChannelStatic, q: buildQuery("", "")},
+		{k: "emitter", ch: "///", t: ChannelStatic, q: buildQuery("", "", "", "")},
+		{k: "emitter", ch: "/a", t: ChannelStatic, q: buildQuery("", "a")},
+		{k: "emitter", ch: "a/", t: ChannelStatic, q: buildQuery("a", "")},
+		{k: "emitter", ch: "a", t: ChannelStatic, q: buildQuery("a")},
+		{k: "emitter", ch: "a/b/c", t: ChannelStatic, q: buildQuery("a", "b", "c")},
+		{k: "emitter", ch: "test-channel", t: ChannelStatic, q: buildQuery("test-channel")},
+		{k: "emitter", ch: "test-channel/+/and-more", t: ChannelWildcard, q: buildQuery("test-channel", "+", "and-more")},
+		{k: "emitter", ch: "a/-/x", t: ChannelStatic, q: buildQuery("a", "-", "x")},
+		{k: "emitter", ch: "a/b/c/d", t: ChannelStatic, q: buildQuery("a", "b", "c", "d")},
+		{k: "emitter", ch: "a/b/c/+", t: ChannelWildcard, q: buildQuery("a", "b", "c", "+")},
+		{k: "emitter", ch: "a/+/c/+", t: ChannelWildcard, q: buildQuery("a", "+", "c", "+")},
+		{k: "emitter", ch: "b/+", t: ChannelWildcard, q: buildQuery("b", "+")},
+		{k: "emitter", ch: "a/b/#", t: ChannelWildcard, q: buildQuery("a", "b", "#")},
+		{k: "emitter", ch: "a/b/#", o: []string{"test=true"}, t: ChannelWildcard, q: buildQuery("a", "b", "#")},
+		{k: "0TJnt4yZPL73zt35h1UTIFsYBLetyD_g", ch: "emitter", o: []string{"test=true", "something=7"}, t: ChannelStatic},
+		{k: "emitter", ch: "a/b/c/d", o: []string{"test=true", "something=7"}, t: ChannelStatic},
 
 		// Invalid channels
 		{t: ChannelInvalid},
-		{k: "emitter", ch: "a/@/x/", t: ChannelInvalid},
-		{k: "emitter", ch: "a", t: ChannelInvalid},
-		{k: "emitter", ch: "a/b/c", t: ChannelInvalid},
-		{k: "emitter", ch: "a//b/", t: ChannelInvalid},
-		{k: "emitter", ch: "a//////b/c", t: ChannelInvalid},
+		{k: "emitter", ch: "a/@/x", t: ChannelInvalid},
+		{k: "emitter", ch: "a/#/c", t: ChannelInvalid},
 		{k: "emitter", ch: "*", t: ChannelInvalid},
-		{k: "emitter", ch: "+", t: ChannelInvalid},
-		{k: "emitter", ch: "a/+", t: ChannelInvalid},
-		{k: "emitter", ch: "b/+", t: ChannelInvalid},
-		{k: "emitter", ch: "b/*+/", t: ChannelInvalid},
-		{k: "emitter", ch: "b/+a/", t: ChannelInvalid},
-		{k: "emitter", ch: "", t: ChannelInvalid},
-		{k: "emitter", ch: "/", t: ChannelInvalid},
-		{k: "emitter", ch: "//", t: ChannelInvalid},
-		{k: "emitter", ch: "a//", t: ChannelInvalid},
-		{k: "emitter", ch: "a/b/c/d/", o: []string{"test=true", "something=7", "more=_"}, t: ChannelInvalid},
-		{k: "emitter", ch: "a/b/c/d/", o: []string{"test==true"}, t: ChannelInvalid},
-		{k: "emitter", ch: "a/b/c/d/", o: []string{"te_st==true"}, t: ChannelInvalid},
-		{k: "emitter", ch: "a/", o: []string{"=true"}, t: ChannelInvalid},
-		{k: "emitter", ch: "a/", o: []string{"test="}, t: ChannelInvalid},
-		//		{k: "emitter", ch: "a/b/c/d", o: []string{"test=="}, err: true},
+		{k: "emitter", ch: "b/*+", t: ChannelInvalid},
+		{k: "emitter", ch: "b/+a", t: ChannelInvalid},
+		{k: "emitter", ch: "b/a+", t: ChannelInvalid},
+		{k: "emitter", ch: "b/#a", t: ChannelInvalid},
+		{k: "emitter", ch: "b/a#", t: ChannelInvalid},
+		{k: "emitter", ch: "a/b/c/d", o: []string{"test=true", "something=7", "more=_"}, t: ChannelInvalid},
+		{k: "emitter", ch: "a/b/c/d", o: []string{"test==true"}, t: ChannelInvalid},
+		{k: "emitter", ch: "a/b/c/d", o: []string{"te_st==true"}, t: ChannelInvalid},
+		{k: "emitter", ch: "a", o: []string{"=true"}, t: ChannelInvalid},
+		{k: "emitter", ch: "a", o: []string{"test="}, t: ChannelInvalid},
 	}
 
 	for _, tc := range tests {
@@ -82,13 +93,10 @@ func TestParseChannel(t *testing.T) {
 		// Parse the channel now
 		out := ParseChannel([]byte(in))
 		assert.Equal(t, tc.t, out.ChannelType, "input: "+in)
+		if len(tc.q) > 0 {
+			assert.Equal(t, tc.q, out.Query)
+		}
 		if tc.t != ChannelInvalid && out.ChannelType != ChannelInvalid {
-
-			// Make sure this always ends with a trailing slash
-			if !strings.HasSuffix(tc.ch, "/") {
-				tc.ch += "/"
-			}
-
 			//assert.Equal(t, ChannelStatic, out.Type)
 			assert.Equal(t, tc.k, string(out.Key), "input: "+in)
 			assert.Equal(t, tc.ch, string(out.Channel), "input: "+in)

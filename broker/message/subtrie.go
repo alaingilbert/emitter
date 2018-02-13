@@ -12,6 +12,8 @@
 * with this program. If not, see<http://www.gnu.org/licenses/>.
 ************************************************************************************/
 
+// https://en.wikipedia.org/wiki/Ctrie
+
 package message
 
 import (
@@ -123,8 +125,8 @@ func (c *cNode) removed(word uint32, sub Subscriber) *cNode {
 
 // getBranches returns the branches for the given word. There are two possible
 // branches: exact match and single wildcard.
-func (c *cNode) getBranches(word uint32) (*branch, *branch) {
-	return c.branches[word], c.branches[wildcard]
+func (c *cNode) getBranches(word uint32) (*branch, *branch, *branch) {
+	return c.branches[word], c.branches[wildcard], c.branches[multiwc]
 }
 
 type branch struct {
@@ -175,6 +177,14 @@ func NewTrie() *Trie {
 func (c *Trie) Subscribe(ssid Ssid, sub Subscriber) (*Subscription, error) {
 	rootPtr := (*unsafe.Pointer)(unsafe.Pointer(&c.root))
 	root := (*iNode)(atomic.LoadPointer(rootPtr))
+
+	// If last word is a #, we subscribe to the hierarchy that precede it as well.
+	if len(ssid) > 1 && ssid[len(ssid)-1] == multiwc {
+		if !c.iinsert(root, nil, ssid[0:len(ssid)-1], sub) {
+			c.Subscribe(ssid, sub)
+		}
+	}
+
 	if !c.iinsert(root, nil, ssid, sub) {
 		c.Subscribe(ssid, sub)
 	}
@@ -335,7 +345,7 @@ func (c *Trie) ilookup(i, parent *iNode, words []uint32, subs *Subscribers) bool
 	switch {
 	case main.cNode != nil:
 		// Traverse exact-match branch and single-word-wildcard branch.
-		exact, singleWC := main.cNode.getBranches(words[0])
+		exact, singleWC, multiWC := main.cNode.getBranches(words[0])
 		if exact != nil {
 			if !c.bLookup(i, parent, main, exact, words, subs) {
 				return false
@@ -343,8 +353,26 @@ func (c *Trie) ilookup(i, parent *iNode, words []uint32, subs *Subscribers) bool
 		}
 
 		if singleWC != nil {
+			// Wildcards does not subscribe to $SYS
+			if parent == nil && words[0] == sys {
+				return true
+			}
+
 			if !c.bLookup(i, parent, main, singleWC, words, subs) {
 				return false
+			}
+		}
+
+		if multiWC != nil {
+			// Wildcards does not subscribe to $SYS
+			if parent == nil && words[0] == sys {
+				return true
+			}
+
+			if len(multiWC.subs) > 0 {
+				for _, s := range multiWC.subscribers() {
+					subs.AddUnique(s)
+				}
 			}
 		}
 
@@ -361,13 +389,6 @@ func (c *Trie) ilookup(i, parent *iNode, words []uint32, subs *Subscribers) bool
 // given branch. True is returned if the Subscribers were retrieved, false if
 // the operation needs to be retried.
 func (c *Trie) bLookup(i, parent *iNode, main *mainNode, b *branch, words []uint32, subs *Subscribers) bool {
-	// Retrieve the subscribers from the branch we are currently traversing.
-	if len(b.subs) > 0 {
-		for _, s := range b.subscribers() {
-			subs.AddUnique(s)
-		}
-	}
-
 	if len(words) > 1 {
 		// If more than 1 key is present in the path, the tree must be
 		// traversed deeper.
@@ -378,6 +399,13 @@ func (c *Trie) bLookup(i, parent *iNode, main *mainNode, b *branch, words []uint
 
 		// If the branch has an I-node, ilookup is called recursively.
 		return c.ilookup(b.iNode, i, words[1:], subs)
+	} else {
+		// Retrieve the subscribers from the branch we are currently traversing.
+		if len(b.subs) > 0 {
+			for _, s := range b.subscribers() {
+				subs.AddUnique(s)
+			}
+		}
 	}
 	return true
 }

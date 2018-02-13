@@ -29,7 +29,9 @@ const (
 	system   = uint32(0)
 	presence = uint32(3869262148)
 	query    = uint32(3939663052)
-	wildcard = uint32(1815237614)
+	wildcard = uint32(1815237614) // +
+	multiwc  = uint32(4285801373) // #
+	sys      = uint32(2031597578) // $SYS
 )
 
 // Query represents a constant SSID for a query.

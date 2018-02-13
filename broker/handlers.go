@@ -16,7 +16,6 @@ package broker
 
 import (
 	"encoding/json"
-	"strings"
 	"time"
 
 	"github.com/emitter-io/emitter/broker/message"
@@ -399,11 +398,6 @@ func (c *Conn) onPresence(payload []byte) (interface{}, bool) {
 	// Validate the contract
 	if !contract.Validate(key) {
 		return ErrUnauthorized, false
-	}
-
-	// Ensure we have trailing slash
-	if !strings.HasSuffix(msg.Channel, "/") {
-		msg.Channel = msg.Channel + "/"
 	}
 
 	// Parse the channel

@@ -12,8 +12,8 @@ import (
 
 func TestOnGossipUnicast(t *testing.T) {
 	frame := message.Frame{
-		{Ssid: message.Ssid{1, 2, 3}, Channel: []byte("a/b/c/"), Payload: []byte("hello abc")},
-		{Ssid: message.Ssid{1, 2, 3}, Channel: []byte("a/b/"), Payload: []byte("hello ab")},
+		{Ssid: message.Ssid{1, 2, 3}, Channel: []byte("a/b/c"), Payload: []byte("hello abc")},
+		{Ssid: message.Ssid{1, 2, 3}, Channel: []byte("a/b"), Payload: []byte("hello ab")},
 	}
 
 	// Encode using binary + snappy
